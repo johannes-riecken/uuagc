@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import Prelude hiding (exp)
@@ -13,6 +14,8 @@ import TigerTypes
 import System.Environment(getArgs)
 import UU.Scanner.GenTokenSymbol
 import UU.Scanner.GenTokenOrd
+import Data.Aeson hiding (Array)
+import qualified TigerASS as A
 
 pBracksPos p = (,) <$> pOBrackPos <*> p <* pCBrack
 
@@ -46,7 +49,8 @@ parseFile f = do text <- readFile f
                  putStrLn text
                  tokens <- scanFile  f
                  ast <- parseIO program tokens
-                 --print ast
+                 let assAst = A.Program (A.Let [A.TypeDecs [A.TypeDec "arrtype" (A.Array "int")],A.VarDec "arr1" (Just "arrtype") (A.ArrayVal "arrtype" (A.IntLit 10) (A.IntLit 0))] (A.LValue (A.Ident "arr1")))
+                 print . programToAss $ ast
                  mapM (putStrLn.sem_Error)
                       (sem_Program ast)
                  return ()

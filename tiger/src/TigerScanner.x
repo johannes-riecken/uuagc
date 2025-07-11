@@ -91,7 +91,7 @@ scanFile file = do txt <- readFile file
                    return (tiger_scan file alexStartPos txt)
 
 tiger_scan :: FilePath -> AlexPosn -> String -> [Token]
-tiger_scan file pos input = alex_gscan stop_act pos '\n' input (0,file)
+tiger_scan file pos input = alex_gscan stop_act pos '\n' [] input (0,file)
 
 stop_act pos char ""     state = []
 stop_act pos char (s:ss) state = errToken ("unexpected character: " ++ show s) (makePos (snd state) pos)

@@ -1,0 +1,185 @@
+let
+
+function myNot(n : int) : int = if n = 0 then 1 else 0
+var true := 1
+var false := 0
+
+function lc(s : string) : string =
+    if ord(s) >= ord("A") & ord(s) <= ord("Z") then chr(ord(s) + 32) else s
+
+function uc(s : string) : string =
+    if ord(s) >= ord("a") & ord(s) <= ord("z") then chr(ord(s) - 32) else s
+
+function isUpper(s : string) : int =
+    ord(s) >= ord("A") & ord(s) <= ord("Z")
+
+function nop() = (print(""))
+
+function capitalize(s : string) : string =
+    let
+    var h := substring(s, 0, 1)
+    var t := substring(s, 1, size(s) - 1)
+    in
+    if ord(h) >= ord("a") & ord(h) <= ord("z") then concat(chr(ord(h) - 32), t) else s
+    end
+
+function capitalizeAndUnderscore(s : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    var char_upper := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    char_upper := uc(char);
+    if isUpper(char) then
+    ret := concat(ret, concat("_", char_upper))
+    else
+    ret := concat(ret, char_upper)
+    );
+    ret
+    end
+
+function decapitalize(s : string) : string =
+    let
+    var h := substring(s, 0, 1)
+    var t := substring(s, 1, size(s) - 1)
+    in
+    if ord(h) >= ord("A") & ord(h) <= ord("Z") then concat(chr(ord(h) + 32), t) else s
+    end
+
+function firstWord(s : string) : string =
+    let
+    var ret := ""
+    var c := substring(s, 0, 1)
+    var i := 0
+    in
+    while myNot(c = " ") do (
+        ret := concat(ret, substring(s, i, 1));
+        i := i + 1;
+        c := substring(s, i, 1)
+        );
+    ret
+    end
+
+function lowercaseAndDash(s : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    if isUpper(char) then
+    ret := concat(ret, concat("-", lc(char)))
+    else
+    ret := concat(ret, char)
+    );
+    ret
+    end
+
+function snakeCase(s : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    if isUpper(char) then
+    ret := concat(ret, concat("_", lc(char)))
+    else
+    ret := concat(ret, char)
+    );
+    ret
+    end
+
+function spaceSeparated(s : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    if isUpper(char) then
+    ret := concat(ret, concat(" ", char))
+    else
+    ret := concat(ret, char)
+    );
+    ret
+    end
+
+function spacesToUnderscores(s : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    if char = " " then
+    ret := concat(ret, "_")
+    else
+    ret := concat(ret, char)
+    );
+    ret
+    end
+
+function substringBefore(s : string, d : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    if char = d then
+    return ret
+    else
+    ret := concat(ret, char)
+    );
+    ret
+    end
+
+function underscoresToCamelCase(s : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    (if char = "_" then
+    nop()
+    else
+    if prev_char = "_" then
+    ret := concat(ret, uc(char))
+    else
+    ret := concat(ret, char));
+    prev_char := char
+    );
+    ret
+    end
+
+function underscoresToSpaces(s : string) : string =
+    let
+    var ret := ""
+    var char := " "
+    in
+    for i := 0 to size(s) - 1 do (
+    char := substring(s, i, 1);
+    if char = "_" then
+    ret := concat(ret, " ")
+    else
+    ret := concat(ret, char)
+    );
+    ret
+    end
+
+in
+print(capitalize("hello"));
+print("\n");
+print(decapitalize("Dickbutt\n"));
+print(firstWord("foo bar baz"));
+printi(substring("foobar", 0, 3) = "foo");
+print("\n");
+/* nop() */
+print(lowercaseAndDash("fooBarBaz"));
+print("\n");
+print(capitalizeAndUnderscore("fooBarBaz"))
+end

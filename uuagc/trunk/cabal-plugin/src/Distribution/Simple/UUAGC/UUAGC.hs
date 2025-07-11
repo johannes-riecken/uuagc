@@ -1,4 +1,5 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 module Distribution.Simple.UUAGC.UUAGC(uuagcUserHook,
                                        uuagcUserHook',
                                        uuagc,
@@ -10,7 +11,8 @@ module Distribution.Simple.UUAGC.UUAGC(uuagcUserHook,
 import Debug.Trace
 import Distribution.Simple
 import Distribution.Simple.PreProcess
-import Distribution.Simple.LocalBuildInfo
+import Distribution.Simple.LocalBuildInfo hiding (buildDir)
+import qualified Distribution.Simple.LocalBuildInfo as LBI
 import Distribution.Simple.Utils
 import Distribution.Simple.Setup
 import Distribution.PackageDescription hiding (Flag)
@@ -56,8 +58,14 @@ import Data.List (nub,intersperse)
 import Data.Map (Map)
 import qualified Data.Map as Map
 
-#if MIN_VERSION_Cabal(3,6,0)
+#if MIN_VERSION_Cabal(3,14,0)
+import Distribution.Utils.Path (getSymbolicPath, Pkg, Source, FileOrDir(..), SymbolicPath)
+#elif MIN_VERSION_Cabal(3,6,0)
 import Distribution.Utils.Path (getSymbolicPath, PackageDir, SourceDir, SymbolicPath)
+#endif
+
+#if MIN_VERSION_Cabal(3,14,0)
+buildDir = getSymbolicPath . LBI.buildDir
 #endif
 
 {-# DEPRECATED uuagcUserHook, uuagcUserHook', uuagc "Use uuagcLibUserHook instead" #-}
@@ -106,7 +114,7 @@ uuagcFromString uuagcPath args file = do
 -- | Main hook, argument should be uuagc function
 uuagcLibUserHook :: ([String] -> FilePath -> IO (ExitCode, [FilePath])) -> UserHooks
 uuagcLibUserHook uuagc = hooks where
-  hooks = simpleUserHooks { hookedPreProcessors = ("ag", ag):("lag",ag):knownSuffixHandlers
+  hooks = simpleUserHooks { hookedPreProcessors = (Suffix "ag", ag):(Suffix "lag",ag):knownSuffixHandlers
                           , buildHook = uuagcBuildHook uuagc
 --                          , sDistHook = uuagcSDistHook uuagc
                           }
@@ -290,7 +298,10 @@ uuagc' uuagc build lbi _ =
 
 -- | In Cabal 3.6.0.0 (GHC 9.2) and up, 'BuildInfo' member 'hsSourceDirs' has type
 -- '[SymbolicPath PackageDir SourceDir]', but in versions before that, it is [FilePath].
-#if MIN_VERSION_Cabal(3,6,0)
+#if MIN_VERSION_Cabal(3,14,0)
+hsSourceDirsFilePaths :: [SymbolicPath Pkg (Dir Source)] -> [FilePath]
+hsSourceDirsFilePaths = map getSymbolicPath
+#elif MIN_VERSION_Cabal(3,6,0)
 hsSourceDirsFilePaths :: [SymbolicPath PackageDir SourceDir] -> [FilePath]
 hsSourceDirsFilePaths = map getSymbolicPath
 #else
