@@ -38,22 +38,22 @@ Precedence of the operators (high to low):
 := 		-- right
 -}
 
+main = do
+    args <- getArgs
+    case args of
+        [fn] -> parseFile fn
+        _    -> putStrLn "usage: tiger <file>"
 
-
-main = do args <- getArgs
-          case args of
-           [fn] -> parseFile fn
-           _    -> putStrLn "usage: tiger <file>"
-
-parseFile f = do text <- readFile f
-                 putStrLn text
-                 tokens <- scanFile  f
-                 ast <- parseIO program tokens
-                 let assAst = A.Program (A.Let [A.TypeDecs [A.TypeDec "arrtype" (A.Array "int")],A.VarDec "arr1" (Just "arrtype") (A.ArrayVal "arrtype" (A.IntLit 10) (A.IntLit 0))] (A.LValue (A.Ident "arr1")))
-                 print . programToAss $ ast
-                 mapM (putStrLn.sem_Error)
-                      (sem_Program ast)
-                 return ()
+parseFile f = do
+    text <- readFile f
+    putStrLn text
+    tokens <- scanFile  f
+    ast <- parseIO program tokens
+    -- encodeFile "/tmp/foo.json" $ ast
+    let assAst = A.Program (A.Let [A.TypeDecs [A.TypeDec "arrtype" (A.Array "int")],A.VarDec "arr1" (Just "arrtype") (A.ArrayVal "arrtype" (A.IntLit 10) (A.IntLit 0))] (A.LValue (A.Ident "arr1")))
+    -- print . programToAss $ ast
+    mapM (putStrLn.sem_Error) (sem_Program ast)
+    return ()
 {-
  where keywords = ["array", "if", "then", "else", "while", "for", "to", "do", "let", "in", "end", "of", "break", "nil", "function", "var", "type" ]
        keyops   = [".",":", "+", "-", "*", "/", "=", "<>", "<", "<=", ">", ">=", "&", "|", ":=" ]
@@ -61,7 +61,6 @@ parseFile f = do text <- readFile f
        opchars  = ":+-*/=<>&.|"
 -}
 program = Program <$> exp
-
 
 oper ops = case ops of
              [] -> error "empty operator list"
