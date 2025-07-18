@@ -13,7 +13,11 @@ function uc(s : string) : string =
 function isUpper(s : string) : int =
     ord(s) >= ord("A") & ord(s) <= ord("Z")
 
+function return(s: string) : string = "return"
+
 function nop() = (print(""))
+
+function void(s : string) = nop()
 
 function capitalize(s : string) : string =
     let
@@ -130,7 +134,7 @@ function substringBefore(s : string, d : string) : string =
     for i := 0 to size(s) - 1 do (
     char := substring(s, i, 1);
     if char = d then
-    return ret
+    void(return(ret))
     else
     ret := concat(ret, char)
     );
@@ -141,6 +145,7 @@ function underscoresToCamelCase(s : string) : string =
     let
     var ret := ""
     var char := " "
+    var prev_char := " "
     in
     for i := 0 to size(s) - 1 do (
     char := substring(s, i, 1);
@@ -172,14 +177,5 @@ function underscoresToSpaces(s : string) : string =
     end
 
 in
-print(capitalize("hello"));
-print("\n");
-print(decapitalize("Dickbutt\n"));
-print(firstWord("foo bar baz"));
-printi(substring("foobar", 0, 3) = "foo");
-print("\n");
-/* nop() */
-print(lowercaseAndDash("fooBarBaz"));
-print("\n");
-print(capitalizeAndUnderscore("fooBarBaz"))
+print("\n")
 end

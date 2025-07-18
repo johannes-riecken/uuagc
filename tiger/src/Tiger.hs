@@ -1,6 +1,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Monad (when)
 import Prelude hiding (exp)
 import UU.Parsing
 import TigerScanner (scanFile)
@@ -12,6 +13,7 @@ import TigerError(sem_Error)
 import TigerAS
 import TigerTypes
 import System.Environment(getArgs)
+import System.Exit
 import UU.Scanner.GenTokenSymbol
 import UU.Scanner.GenTokenOrd
 import Data.Aeson hiding (Array)
@@ -42,7 +44,9 @@ main = do
     args <- getArgs
     case args of
         [fn] -> parseFile fn
-        _    -> putStrLn "usage: tiger <file>"
+        _    -> do
+            putStrLn "usage: tiger <file>"
+            exitWith (ExitFailure 1)
 
 parseFile f = do
     text <- readFile f
@@ -51,8 +55,11 @@ parseFile f = do
     ast <- parseIO program tokens
     -- encodeFile "/tmp/foo.json" $ ast
     let assAst = A.Program (A.Let [A.TypeDecs [A.TypeDec "arrtype" (A.Array "int")],A.VarDec "arr1" (Just "arrtype") (A.ArrayVal "arrtype" (A.IntLit 10) (A.IntLit 0))] (A.LValue (A.Ident "arr1")))
-    -- print . programToAss $ ast
-    mapM (putStrLn.sem_Error) (sem_Program ast)
+    let errs = map sem_Error (sem_Program ast)
+    when (any (not . null) $ errs) $ do
+        mapM (putStrLn.sem_Error) (sem_Program ast)
+        exitWith (ExitFailure 1)
+    print . programToAss $ ast
     return ()
 {-
  where keywords = ["array", "if", "then", "else", "while", "for", "to", "do", "let", "in", "end", "of", "break", "nil", "function", "var", "type" ]
