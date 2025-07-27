@@ -3462,10 +3462,6 @@ integer  = makeToken (valueToken TkInteger10)
 -- string literals
 string   = makeToken (valueToken TkString)
 
--- comment-lexer: drops a comment-block enclosed by /* and */ from the input, and resumes lexing.
--- block comments can be nested, hence: /* this /* is some */ text */
--- is a single comment-block
-
 comment pos _ inp _ _ st@(_,file) = dropcomments (move_pos2 pos) 1 (drop 2 inp)
   where move_pos2 (AlexPn a l c) = AlexPn (a+2) l (c+2)
         dropcomments p 0 ss = continue p ss

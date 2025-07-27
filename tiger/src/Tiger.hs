@@ -50,7 +50,7 @@ main = do
 
 parseFile f = do
     text <- readFile f
-    putStrLn text
+    -- putStrLn text
     tokens <- scanFile  f
     ast <- parseIO program tokens
     -- encodeFile "/tmp/foo.json" $ ast
