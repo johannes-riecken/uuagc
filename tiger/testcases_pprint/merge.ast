@@ -1,0 +1,187 @@
+Program
+  (Let
+     [TypeDecs
+        [TypeDec "any" (Record [TypedVar "any" "int"])],
+      VarDec "buffer" Nothing (Apply "getchar" []),
+      FunDecs
+        [FunDec
+           "readint"
+           [TypedVar "any" "any"]
+           (Just "int")
+           (Let
+              [VarDec "i" Nothing (IntLit 0),
+               FunDecs
+                 [FunDec
+                    "isdigit"
+                    [TypedVar "s" "string"]
+                    (Just "int")
+                    (Op
+                       "&"
+                       (Op
+                          ">="
+                          (Apply "ord" [StringLit "\"0\""])
+                          (Apply "ord" [LValue (Ident "buffer")]))
+                       (Op
+                          "<="
+                          (Apply "ord" [StringLit "\"9\""])
+                          (Apply "ord" [LValue (Ident "buffer")]))),
+                  FunDec
+                    "skipto"
+                    []
+                    Nothing
+                    (While
+                       (Op
+                          "|"
+                          (Op
+                             "=" (StringLit "\" \"") (LValue (Ident "buffer")))
+                          (Op
+                             "="
+                             (StringLit "\"\\n\"")
+                             (LValue (Ident "buffer"))))
+                       (Assign (Ident "buffer") (Apply "getchar" [])))]]
+              (Sequence
+                 (Apply "skipto" [])
+                 (Sequence
+                    (Assign
+                       (Dot (Ident "any") "any")
+                       (Apply "isdigit" [LValue (Ident "buffer")]))
+                    (Sequence
+                       (While
+                          (Apply "isdigit" [LValue (Ident "buffer")])
+                          (Sequence
+                             (Assign
+                                (Ident "i")
+                                (Op
+                                   "-"
+                                   (Op
+                                      "+"
+                                      (Op "*" (LValue (Ident "i")) (IntLit 10))
+                                      (Apply "ord" [LValue (Ident "buffer")]))
+                                   (Apply "ord" [StringLit "\"0\""])))
+                             (Assign (Ident "buffer") (Apply "getchar" []))))
+                       (LValue (Ident "i"))))))],
+      TypeDecs
+        [TypeDec
+           "list"
+           (Record
+              [TypedVar "first" "int", TypedVar "rest" "list"])],
+      FunDecs
+        [FunDec
+           "readlist"
+           []
+           (Just "list")
+           (Let
+              [VarDec
+                 "any"
+                 Nothing
+                 (RecordVal "any" [AssignField "any" (IntLit 0)]),
+               VarDec
+                 "i" Nothing (Apply "readint" [LValue (Ident "any")])]
+              (If
+                 (LValue (Dot (Ident "any") "any"))
+                 (RecordVal
+                    "list"
+                    [AssignField "first" (LValue (Ident "i")),
+                     AssignField "rest" (Apply "readlist" [])])
+                 Nil)),
+         FunDec
+           "merge"
+           [TypedVar "a" "list", TypedVar "b" "list"]
+           (Just "list")
+           (If
+              (Op "=" Nil (LValue (Ident "a")))
+              (LValue (Ident "b"))
+              (If
+                 (Op "=" Nil (LValue (Ident "b")))
+                 (LValue (Ident "a"))
+                 (If
+                    (Op
+                       "<"
+                       (LValue (Dot (Ident "b") "first"))
+                       (LValue (Dot (Ident "a") "first")))
+                    (RecordVal
+                       "list"
+                       [AssignField
+                          "first" (LValue (Dot (Ident "a") "first")),
+                        AssignField
+                          "rest"
+                          (Apply
+                             "merge"
+                             [LValue (Dot (Ident "a") "rest"),
+                              LValue (Ident "b")])])
+                    (RecordVal
+                       "list"
+                       [AssignField
+                          "first" (LValue (Dot (Ident "b") "first")),
+                        AssignField
+                          "rest"
+                          (Apply
+                             "merge"
+                             [LValue (Ident "a"),
+                              LValue (Dot (Ident "b") "rest")])])))),
+         FunDec
+           "printint"
+           [TypedVar "i" "int"]
+           Nothing
+           (Let
+              [FunDecs
+                 [FunDec
+                    "f"
+                    [TypedVar "i" "int"]
+                    Nothing
+                    (If
+                       (Op ">" (IntLit 0) (LValue (Ident "i")))
+                       (Sequence
+                          (Apply "f" [Op "/" (LValue (Ident "i")) (IntLit 10)])
+                          (Apply
+                             "print"
+                             [Apply
+                                "chr"
+                                [Op
+                                   "+"
+                                   (Op
+                                      "-"
+                                      (LValue (Ident "i"))
+                                      (Op
+                                         "*"
+                                         (Op
+                                            "/"
+                                            (LValue (Ident "i"))
+                                            (IntLit 10))
+                                         (IntLit 10)))
+                                   (Apply "ord" [StringLit "\"0\""])]]))
+                       Skip)]]
+              (If
+                 (Op "<" (IntLit 0) (LValue (Ident "i")))
+                 (Sequence
+                    (Apply "print" [StringLit "\"-\""])
+                    (Apply "f" [UnOp "-" (LValue (Ident "i"))]))
+                 (If
+                    (Op ">" (IntLit 0) (LValue (Ident "i")))
+                    (Apply "f" [LValue (Ident "i")])
+                    (Apply "print" [StringLit "\"0\""])))),
+         FunDec
+           "printlist"
+           [TypedVar "l" "list"]
+           Nothing
+           (If
+              (Op "=" Nil (LValue (Ident "l")))
+              (Apply "print" [StringLit "\"\\n\""])
+              (Sequence
+                 (Apply "printint" [LValue (Dot (Ident "l") "first")])
+                 (Sequence
+                    (Apply "print" [StringLit "\" \""])
+                    (Apply
+                       "printlist" [LValue (Dot (Ident "l") "rest")]))))],
+      VarDec "list1" Nothing (Apply "readlist" []),
+      VarDec
+        "list2"
+        Nothing
+        (Sequence
+           (Assign (Ident "buffer") (Apply "getchar" []))
+           (Apply "readlist" []))]
+     (Apply
+        "printlist"
+        [Apply
+           "merge"
+           [LValue (Ident "list1"), LValue (Ident "list2")]]))
