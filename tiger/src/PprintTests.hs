@@ -21,6 +21,7 @@ main = do
     p4_pretty <- readFile "../testcases_pprint/test39.tig"
     p5_pretty <- readFile "../testcases_pprint/test4.tig"
     p6_pretty <- readFile "../testcases_pprint/merge.tig"
+    p7_pretty <- readFile "../testcases_pprint/queens.tig"
     hspec $ do
         describe "p1" $ do
             it "rewrites" $ do
@@ -40,6 +41,9 @@ main = do
         describe "p6" $ do
             it "rewrites" $ do
                 ((<> "\n") . show . pretty $ p6) `shouldBe` p6_pretty
+        describe "p7" $ do
+            it "rewrites" $ do
+                ((<> "\n") . show . pretty $ p7) `shouldBe` p7_pretty
 
 instance Pretty Program where
     pretty (Program e) = pretty e
@@ -54,13 +58,16 @@ instance Pretty Expr where
     pretty (Apply v []) = pretty v <> "()"
     pretty (Apply v args) = pretty v <> parens (foldr1 (surround ", ") . map pretty $ args)
     pretty (RecordVal x ys) = pretty x <> "{" <> (foldr1 (surround ", ") . map pretty $ ys) <> "}"
-    pretty (For v e0 e1 e2) = "for" <+> pretty v <+> ":=" <+> pretty e0 <+> "to" <+> pretty e1 <+> "do" <+> pretty e2
+    pretty (ArrayVal ty e0 e1) = pretty ty <+> "[" <+> pretty e0 <+> "]" <+> "of" <+> pretty e1
+    pretty (For v e0 e1 e2) = "for" <+> pretty v <+> ":=" <+> pretty e0 <+> "to" <+> pretty e1 <> line <> "do" <+> pretty e2
     -- Is that a bug in the parser?
     pretty (Op x@"<" r l) = pretty l <+> pretty x <+> pretty r
     pretty (Op x@"<=" r l) = pretty l <+> pretty x <+> pretty r
     pretty (Op x@"=" r l) = pretty l <+> pretty x <+> pretty r
     pretty (Op x@">" r l) = pretty l <+> pretty x <+> pretty r
     pretty (Op x@">=" r l) = pretty l <+> pretty x <+> pretty r
+    pretty (Op x@"=" r l) = pretty l <+> pretty x <+> pretty r
+    pretty (Op x@"<>" r l) = pretty l <+> pretty x <+> pretty r
     pretty (Op x l r) = pretty l <+> pretty x <+> pretty r
     pretty (UnOp x e) = pretty x <> pretty e
     pretty (If e0 e1 Skip) = nest sw . vsep $ ["if" <+> pretty e0, "then" <+> pretty e1]
@@ -96,16 +103,17 @@ instance Pretty DeclGroup where
     pretty x = error ("missing pretty: " <> show x)
 
 instance Pretty TypeDec where
-    pretty (TypeDec nm ty) = "type" <+> pretty nm <+> "=" <+> (braces . pretty $ ty)
+    pretty (TypeDec nm ty) = "type" <+> pretty nm <+> "=" <+> (pretty $ ty)
 
 instance Pretty Type where
-    pretty (Record tys) = foldr1 (surround ", ") $ map pretty tys
+    pretty (Array ty) = "array" <+> "of" <+> pretty ty
+    pretty (Record tys) = braces . foldr1 (surround ", ") . map pretty $ tys
     pretty x = error ("missing pretty: " <> show x)
 
 instance Pretty LValue where
+    pretty (Sub lv e0) = pretty lv <> "[" <> pretty e0 <> "]"
     pretty (Dot lv nm1) = pretty lv <> "." <> pretty nm1
     pretty (Ident x) = pretty x
-    pretty x = error ("missing pretty: " <> show x)
 
 instance Pretty TypedVar where
     pretty (TypedVar v t) = pretty v <+> ":" <+> pretty t
@@ -251,3 +259,5 @@ p5 = Program
 
 -- ../testcases_pprint/merge.ast
 p6 = Program (Let [TypeDecs [TypeDec "any" (Record [TypedVar "any" "int"])],VarDec "buffer" Nothing (Apply "getchar" []),FunDecs [FunDec "readint" [TypedVar "any" "any"] (Just "int") (Let [VarDec "i" Nothing (IntLit 0),FunDecs [FunDec "isdigit" [TypedVar "s" "string"] (Just "int") (Op "&" (Op ">=" (Apply "ord" [StringLit "\"0\""]) (Apply "ord" [LValue (Ident "buffer")])) (Op "<=" (Apply "ord" [StringLit "\"9\""]) (Apply "ord" [LValue (Ident "buffer")]))),FunDec "skipto" [] Nothing (While (Op "|" (Op "=" (StringLit "\" \"") (LValue (Ident "buffer"))) (Op "=" (StringLit "\"\\n\"") (LValue (Ident "buffer")))) (Assign (Ident "buffer") (Apply "getchar" [])))]] (Sequence (Apply "skipto" []) (Sequence (Assign (Dot (Ident "any") "any") (Apply "isdigit" [LValue (Ident "buffer")])) (Sequence (While (Apply "isdigit" [LValue (Ident "buffer")]) (Sequence (Assign (Ident "i") (Op "-" (Op "+" (Op "*" (LValue (Ident "i")) (IntLit 10)) (Apply "ord" [LValue (Ident "buffer")])) (Apply "ord" [StringLit "\"0\""]))) (Assign (Ident "buffer") (Apply "getchar" [])))) (LValue (Ident "i"))))))],TypeDecs [TypeDec "list" (Record [TypedVar "first" "int",TypedVar "rest" "list"])],FunDecs [FunDec "readlist" [] (Just "list") (Let [VarDec "any" Nothing (RecordVal "any" [AssignField "any" (IntLit 0)]),VarDec "i" Nothing (Apply "readint" [LValue (Ident "any")])] (If (LValue (Dot (Ident "any") "any")) (RecordVal "list" [AssignField "first" (LValue (Ident "i")),AssignField "rest" (Apply "readlist" [])]) Nil)),FunDec "merge" [TypedVar "a" "list",TypedVar "b" "list"] (Just "list") (If (Op "=" Nil (LValue (Ident "a"))) (LValue (Ident "b")) (If (Op "=" Nil (LValue (Ident "b"))) (LValue (Ident "a")) (If (Op "<" (LValue (Dot (Ident "b") "first")) (LValue (Dot (Ident "a") "first"))) (RecordVal "list" [AssignField "first" (LValue (Dot (Ident "a") "first")),AssignField "rest" (Apply "merge" [LValue (Dot (Ident "a") "rest"),LValue (Ident "b")])]) (RecordVal "list" [AssignField "first" (LValue (Dot (Ident "b") "first")),AssignField "rest" (Apply "merge" [LValue (Ident "a"),LValue (Dot (Ident "b") "rest")])])))),FunDec "printint" [TypedVar "i" "int"] Nothing (Let [FunDecs [FunDec "f" [TypedVar "i" "int"] Nothing (If (Op ">" (IntLit 0) (LValue (Ident "i"))) (Sequence (Apply "f" [Op "/" (LValue (Ident "i")) (IntLit 10)]) (Apply "print" [Apply "chr" [Op "+" (Op "-" (LValue (Ident "i")) (Op "*" (Op "/" (LValue (Ident "i")) (IntLit 10)) (IntLit 10))) (Apply "ord" [StringLit "\"0\""])]])) Skip)]] (If (Op "<" (IntLit 0) (LValue (Ident "i"))) (Sequence (Apply "print" [StringLit "\"-\""]) (Apply "f" [UnOp "-" (LValue (Ident "i"))])) (If (Op ">" (IntLit 0) (LValue (Ident "i"))) (Apply "f" [LValue (Ident "i")]) (Apply "print" [StringLit "\"0\""])))),FunDec "printlist" [TypedVar "l" "list"] Nothing (If (Op "=" Nil (LValue (Ident "l"))) (Apply "print" [StringLit "\"\\n\""]) (Sequence (Apply "printint" [LValue (Dot (Ident "l") "first")]) (Sequence (Apply "print" [StringLit "\" \""]) (Apply "printlist" [LValue (Dot (Ident "l") "rest")]))))],VarDec "list1" Nothing (Apply "readlist" []),VarDec "list2" Nothing (Sequence (Assign (Ident "buffer") (Apply "getchar" [])) (Apply "readlist" []))] (Apply "printlist" [Apply "merge" [LValue (Ident "list1"),LValue (Ident "list2")]]))
+
+p7 = Program (Let [VarDec "N" Nothing (IntLit 8),TypeDecs [TypeDec "intArray" (Array "int")],VarDec "row" Nothing (ArrayVal "intArray" (LValue (Ident "N")) (IntLit 0)),VarDec "col" Nothing (ArrayVal "intArray" (LValue (Ident "N")) (IntLit 0)),VarDec "diag1" Nothing (ArrayVal "intArray" (Op "-" (Op "+" (LValue (Ident "N")) (LValue (Ident "N"))) (IntLit 1)) (IntLit 0)),VarDec "diag2" Nothing (ArrayVal "intArray" (Op "-" (Op "+" (LValue (Ident "N")) (LValue (Ident "N"))) (IntLit 1)) (IntLit 0)),FunDecs [FunDec "printboard" [] Nothing (Sequence (For "i" (IntLit 0) (Op "-" (LValue (Ident "N")) (IntLit 1)) (Sequence (For "j" (IntLit 0) (Op "-" (LValue (Ident "N")) (IntLit 1)) (Apply "print" [If (Op "=" (LValue (Ident "j")) (LValue (Sub (Ident "col") (LValue (Ident "i"))))) (StringLit "\" O\"") (StringLit "\" .\"")])) (Apply "print" [StringLit "\"\\n\""]))) (Apply "print" [StringLit "\"\\n\""])),FunDec "try" [TypedVar "c" "int"] Nothing (If (Op "=" (LValue (Ident "N")) (LValue (Ident "c"))) (Apply "printboard" []) (For "r" (IntLit 0) (Op "-" (LValue (Ident "N")) (IntLit 1)) (If (Op "&" (Op "&" (Op "=" (IntLit 0) (LValue (Sub (Ident "row") (LValue (Ident "r"))))) (Op "=" (IntLit 0) (LValue (Sub (Ident "diag1") (Op "+" (LValue (Ident "r")) (LValue (Ident "c"))))))) (Op "=" (IntLit 0) (LValue (Sub (Ident "diag2") (Op "-" (Op "+" (LValue (Ident "r")) (IntLit 7)) (LValue (Ident "c"))))))) (Sequence (Assign (Sub (Ident "row") (LValue (Ident "r"))) (IntLit 1)) (Sequence (Assign (Sub (Ident "diag1") (Op "+" (LValue (Ident "r")) (LValue (Ident "c")))) (IntLit 1)) (Sequence (Assign (Sub (Ident "diag2") (Op "-" (Op "+" (LValue (Ident "r")) (IntLit 7)) (LValue (Ident "c")))) (IntLit 1)) (Sequence (Assign (Sub (Ident "col") (LValue (Ident "c"))) (LValue (Ident "r"))) (Sequence (Apply "try" [Op "+" (LValue (Ident "c")) (IntLit 1)]) (Sequence (Assign (Sub (Ident "row") (LValue (Ident "r"))) (IntLit 0)) (Sequence (Assign (Sub (Ident "diag1") (Op "+" (LValue (Ident "r")) (LValue (Ident "c")))) (IntLit 0)) (Assign (Sub (Ident "diag2") (Op "-" (Op "+" (LValue (Ident "r")) (IntLit 7)) (LValue (Ident "c")))) (IntLit 0))))))))) Skip)))]] (Apply "try" [IntLit 0]))
