@@ -56,6 +56,7 @@ toIdent (n,t) = (Id n noPos,(noPos, t))
 
 initVarEnv = Map.fromList (map toIdent
              [ ("print"    , procedure [STRING])
+         , ("printi"   , procedure [INT]   )
 	     , ("flush"    , procedure []      )
 	     , ("exit"     , procedure [INT]   )
 	     , ("getchar"  , function []                 STRING )
